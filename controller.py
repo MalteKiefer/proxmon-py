@@ -23,28 +23,52 @@ class ProxmonController:
 
         while True:
             cmd = prompt_command()
+
+            # Exit
             if cmd in (":q", "q"):
                 break
+
+            # Refresh VM-Tabelle
             elif cmd in (":r", "r"):
                 self._clear_and_refresh()
-            elif cmd.startswith(":") and len(cmd.split()) > 1:
-                action, arg = cmd.split(maxsplit=1)
-                self._handle_vm_command(action, arg)
-            elif cmd == ":tasks":
-                print("Usage: :tasks <nodename>")
-            elif cmd.startswith(":tasks "):
-                self._show_tasks(cmd.split()[1])
-            elif cmd == ":settings":
-                clear_screen()
-                settings_menu(self.config)
+
+            # Hilfe anzeigen
             elif cmd == ":?":
                 clear_screen()
                 display_help()
+
+            # Einstellungen öffnen
+            elif cmd == ":settings":
+                clear_screen()
+                settings_menu(self.config)
+
+            # Nodes anzeigen
             elif cmd == ":nodes":
                 clear_screen()
                 self._show_nodes()
+
+            # Tasks anzeigen – zuerst prüfen, bevor andere :<command> <arg> greifen
+            elif cmd.startswith(":tasks"):
+                parts = cmd.split()
+                if len(parts) == 2:
+                    self._show_tasks(parts[1])
+                else:
+                    print("Usage: :tasks <nodename>")
+
+            # Node-Reboot separat behandeln, da es kein VM-Befehl ist
+            elif cmd.startswith(":node-restart "):
+                arg = cmd.split(maxsplit=1)[1]
+                self._handle_vm_command(":node-restart", arg)
+
+            # Generische VM-Kommandos mit Argument
+            elif cmd.startswith(":") and len(cmd.split()) > 1:
+                action, arg = cmd.split(maxsplit=1)
+                self._handle_vm_command(action, arg)
+
+            # Unbekannter Befehl
             else:
                 print("Unknown command. Use :? for help.")
+
 
     def _handle_vm_command(self, action, arg):
         commands = {
