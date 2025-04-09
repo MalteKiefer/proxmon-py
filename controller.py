@@ -59,7 +59,34 @@ class ProxmonController:
             elif cmd.startswith(":node-restart "):
                 arg = cmd.split(maxsplit=1)[1]
                 self._handle_vm_command(":node-restart", arg)
+                
+            elif cmd.startswith(":ru "):
+                node = cmd.split()[1]
+                confirm = input(f"Update Node '{node}' and reboot after? [y/N]: ").strip().lower()
+                if confirm == "y":
+                    try:
+                        self.pm.update_node(node)
+                        return f"Update triggered for {node}"
+                    except Exception as e:
+                        return f"Update failed: {e}"
+                else:
+                    return "Update canceled."
+            
+            elif cmd.startswith(":dns "):
+                node = cmd.split()[1]
+                dns1 = input("Primary DNS (required): ").strip()
+                dns2 = input("Secondary DNS (optional): ").strip()
+                dns3 = input("Tertiary DNS (optional): ").strip()
 
+                if not dns1:
+                    return "Primary DNS is required."
+
+                try:
+                    self.pm.set_dns(node, dns1, dns2 or None, dns3 or None)
+                    return f"DNS updated for {node}"
+                except Exception as e:
+                    return f"Failed to update DNS: {e}"
+                        
             # Generische VM-Kommandos mit Argument
             elif cmd.startswith(":") and len(cmd.split()) > 1:
                 action, arg = cmd.split(maxsplit=1)
@@ -106,6 +133,16 @@ class ProxmonController:
     def refresh(self):
         self.current_vms = self.pm.fetch_vms()
         display_vm_table(self.current_vms, self.config.get("use_color", False), config=self.config)
+
+    def update_node(self, node):
+        self.proxmox.nodes(node).apt.update.post()
+        self.proxmox.nodes(node).status().reboot.post()
+
+    def set_dns(self, node, dns1, dns2=None, dns3=None):
+        dns_config = {"dns1": dns1}
+        if dns2: dns_config["dns2"] = dns2
+        if dns3: dns_config["dns3"] = dns3
+        self.proxmox.nodes(node).dns.post(**dns_config)
 
     def _choose_server(self, servers):
         while True:
