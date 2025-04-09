@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 CONFIG_PATH = os.path.expanduser("~/.config/proxmon/config.json")
 
 def ensure_config_dir():
@@ -19,3 +20,9 @@ def format_uptime(seconds):
             return f"{days}d {hours}h {minutes}m"
         else:
             return f"{hours}h {minutes}m"
+        
+def format_unix_timestamp(ts) -> str:
+    try:
+        return datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return "-"

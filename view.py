@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import box
 from rich.text import Text
-from util import format_uptime
+from util import format_uptime, format_unix_timestamp
 
 console = Console()
 
@@ -98,10 +98,25 @@ def display_vm_table(vms, use_color=False, config=None):
     console.print(table)
 
 def display_tasks(tasks):
-    print(f"\n{'UPID':<40} {'Status':<10} {'StartTime':<20} {'EndTime':<20} {'Type':<8} {'User':<10}")
-    print("-" * 120)
+    table = Table(title="Tasks", box=box.SQUARE_DOUBLE_HEAD, expand=True)
+    table.add_column("Upid", style="bold")
+    table.add_column("Status")
+    table.add_column("StartTime")
+    table.add_column("EndTime")
+    table.add_column("Type")
+    table.add_column("User")
+
     for task in tasks:
-        print(f"{task['upid']:<40} {task['status']:<10} {task['starttime']:<20} {task['endtime']:<20} {task['type']:<8} {task['user']:<10}")
+        table.add_row(
+            str(task.get('upid', '')),
+            str(task.get('status', '')),
+            str(format_unix_timestamp(task.get("starttime", 0))),
+            str(format_unix_timestamp(task.get("endtime", 0))),
+            str(task.get('type', '')),
+            str(task.get('user', ''))
+        )
+
+    console.print(table)
 
 def display_node_table(nodes, use_color=False):
     table = Table(title="Proxmon Node Übersicht", box=box.SQUARE_DOUBLE_HEAD, expand=True)
